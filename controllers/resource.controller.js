@@ -1,19 +1,27 @@
 export class ResourceController {
     /**
      * Simula un recurso privado del Microservicio Alpha.
+     * Stateless: solo confía en el payload verificado (req.user), sin estado
+     * compartido ni dependencia del Servicio Beta.
      */
     static getAlphaPrivateData(req, res) {
-        // TODO: Implementar respuesta para Microservicio Alpha.
-        // 1. Responder con un mensaje que indique acceso exitoso al Servicio Alpha.
-        // 2. Incluir datos del usuario autenticado (req.user) en la respuesta.
+        return res.json({
+            service: 'service-alpha',
+            message: 'Acceso autorizado al recurso privado del Servicio Alpha',
+            user: { id: req.user.sub, name: req.user.name }
+        });
     }
 
     /**
      * Simula un recurso privado del Microservicio Beta.
+     * Valida el mismo token contra la llave pública compartida, de forma
+     * independiente del Servicio Alpha.
      */
     static getBetaPrivateData(req, res) {
-        // TODO: Implementar respuesta para Microservicio Beta.
-        // 1. Responder con un mensaje que indique acceso exitoso al Servicio Beta.
-        // 2. Incluir datos del usuario autenticado (req.user) en la respuesta.
+        return res.json({
+            service: 'service-beta',
+            message: 'Acceso autorizado al recurso privado del Servicio Beta',
+            user: { id: req.user.sub, name: req.user.name }
+        });
     }
 }
