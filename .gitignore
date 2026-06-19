@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Keys
+*.pem
+private.pem
+public.pem
+
+# Environment
+.env
+
+# macOS
+.DS_Store
