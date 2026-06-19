@@ -25,10 +25,25 @@ export const authMiddleware = (req, res, next) => {
         req.user = payload;
         return next();
     } catch (err) {
-        // 3. Diferenciar expiración vs. firma/algoritmo inválido.
+        // 3. Responder apropiadamente según el tipo de excepción.
+
+        // Expiración: el cliente debe re-autenticarse -> 401.
         if (err instanceof jwt.TokenExpiredError) {
             return res.status(401).json({ error: 'Token expirado' });
         }
-        return res.status(403).json({ error: 'Token inválido' });
+
+        // Token presente pero no confiable (firma/algoritmo/forma) -> 403.
+        if (err instanceof jwt.JsonWebTokenError) {
+            // err.message: 'invalid algorithm', 'invalid signature',
+            // 'jwt malformed', 'jwt signature is required' (alg: none), etc.
+            const reason =
+                err.message === 'invalid algorithm'
+                    ? 'Algoritmo de firma no permitido'
+                    : 'Firma de token inválida';
+            return res.status(403).json({ error: reason });
+        }
+
+        // Cualquier otra excepción inesperada se delega al manejador global.
+        return next(err);
     }
 };
