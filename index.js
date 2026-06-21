@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import express from 'express';
 import { config } from './config/env.js';
 import authRoutes from './routes/auth.routes.js';
@@ -9,6 +10,8 @@ app.use(express.json());
 
 app.use('/auth', authRoutes);
 app.use('/', resourceRoutes);
+
+Sentry.setupExpressErrorHandler(app);
 
 app.use((err, req, res, next) => {
     if (err.type === 'entity.parse.failed') {
