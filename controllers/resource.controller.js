@@ -1,27 +1,33 @@
+import * as Sentry from '@sentry/node';
+
 export class ResourceController {
-    /**
-     * Simula un recurso privado del Microservicio Alpha.
-     * Stateless: solo confía en el payload verificado (req.user), sin estado
-     * compartido ni dependencia del Servicio Beta.
-     */
-    static getAlphaPrivateData(req, res) {
-        return res.json({
-            service: 'service-alpha',
-            message: 'Acceso autorizado al recurso privado del Servicio Alpha',
-            user: { id: req.user.sub, name: req.user.name }
-        });
+    // ERROR OPERACIONAL: lanza excepción interna que escala a Sentry
+    // vía setupExpressErrorHandler (sin captura explícita).
+    static getAlphaPrivateData(req, res, next) {
+        try {
+            throw new Error('Conexión perdida con la BDD');
+        } catch (err) {
+            return next(err);
+        }
     }
 
-    /**
-     * Simula un recurso privado del Microservicio Beta.
-     * Valida el mismo token contra la llave pública compartida, de forma
-     * independiente del Servicio Alpha.
-     */
+    // ERROR OPERACIONAL: captura explícita con Sentry.captureException +
+    // tags de contexto (userId del JWT, sin datos sensibles).
     static getBetaPrivateData(req, res) {
-        return res.json({
-            service: 'service-beta',
-            message: 'Acceso autorizado al recurso privado del Servicio Beta',
-            user: { id: req.user.sub, name: req.user.name }
-        });
+        try {
+            throw new Error('Fallo interno en service-beta');
+        } catch (err) {
+            Sentry.withScope((scope) => {
+                scope.setTag('service', 'service-beta');
+                scope.setTag('userId', req.user?.sub);
+                scope.setExtra('userName', req.user?.name);
+                scope.setExtra('endpoint', '/v1/service-beta/private');
+                Sentry.captureException(err);
+            });
+            return res.status(500).json({
+                service: 'service-beta',
+                error: 'Error operacional capturado y reportado a Sentry'
+            });
+        }
     }
 }
