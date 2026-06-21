@@ -1,3 +1,4 @@
+import './instrument.js';
 import * as Sentry from '@sentry/node';
 import express from 'express';
 import { config } from './config/env.js';
@@ -21,6 +22,12 @@ app.use((err, req, res, next) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-app.listen(config.PORT, () => {
+const server = app.listen(config.PORT, () => {
     console.log(`Server running on http://localhost:${config.PORT}`);
+});
+
+// Vacía la cola de Sentry antes de cerrar el proceso con Ctrl+C
+process.on('SIGINT', async () => {
+    await Sentry.flush(3000);
+    server.close(() => process.exit(0));
 });
